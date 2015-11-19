@@ -1,7 +1,7 @@
 {
   "name": "base-resolver",
   "description": "base-methods plugin for resolving and registering 'base' applications.",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "homepage": "https://github.com/jonschlinkert/base-resolver",
   "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
   "repository": "jonschlinkert/base-resolver",
@@ -10,7 +10,8 @@
   },
   "license": "MIT",
   "files": [
-    "index.js"
+    "index.js",
+    "utils.js"
   ],
   "main": "index.js",
   "engines": {
