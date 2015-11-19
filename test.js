@@ -1,8 +1,10 @@
 'use strict';
 
 require('mocha');
+var path = require('path');
 var assert = require('assert');
 var register = require('./')
+var tasks = require('base-tasks');
 var Base = require('base-methods');
 var base;
 
@@ -38,34 +40,60 @@ describe('create', function() {
 describe('resolve', function() {
   beforeEach(function() {
     base = new Base();
-    function App(name, options, parent, fn) {
-      Base.call(this, options, parent, fn);
-    }
-    Base.extend(App);
+    base.on('error', function(err) {
+      console.log(err);
+    })
 
     base.use(register(App, {
       method: 'app',
       plural: 'apps'
     }));
+
+    function App(name, options, parent, fn) {
+      Base.call(this, options, parent, fn);
+      this.use(tasks('app'));
+      this.path = name;
+      this.cwd = path.dirname(name);
+      this.name = path.basename(this.cwd, path.extname(this.cwd));
+      this.alias = path.basename(this.cwd).split('-').pop();
+      try {
+        fn.call(this, this, parent);
+      } catch (err) {
+        console.log(err);
+      }
+    }
+
+    Base.extend(App);
   });
 
   describe('glob patterns', function() {
-    it('should resolve locally install modules', function() {
-      base.resolve('*.js');
-      console.log(base)
-      // assert(runner instanceof Runner);
+    it('should register locally install modules', function() {
+      base.register('fixtures/apps/app-*/*.js');
+      assert(base.apps.hasOwnProperty('foo'));
+      assert(base.apps.hasOwnProperty('bar'));
+      assert(base.apps.hasOwnProperty('baz'));
+    });
+
+    it('should register tasks from locally install modules', function() {
+      base.register('fixtures/apps/app-*/*.js');
+
+      assert(base.apps.foo.tasks.hasOwnProperty('default'));
+      assert(base.apps.foo.tasks.hasOwnProperty('a'));
+      assert(base.apps.foo.tasks.hasOwnProperty('b'));
+      assert(base.apps.foo.tasks.hasOwnProperty('c'));
+
+      assert(base.apps.bar.tasks.hasOwnProperty('default'));
+      assert(base.apps.bar.tasks.hasOwnProperty('a'));
+      assert(base.apps.bar.tasks.hasOwnProperty('b'));
+      assert(base.apps.bar.tasks.hasOwnProperty('c'));
+    });
+
+    it('should fire a "resolve" event for each resolved path', function(cb) {
+      base.once('resolve', function (fp) {
+        assert(/appfile/.test(fp));
+        cb();
+      });
+      base.register('fixtures/apps/app-*/*.js');
     });
   });
-
-
-  // describe('initialization', function() {
-  //   it('should listen for errors:', function(cb) {
-  //     runner = new Runner();
-  //     runner.on('error', function(err) {
-  //       assert(err.message === 'foo');
-  //       cb();
-  //     });
-  //     runner.emit('error', new Error('foo'));
-  //   });
-  // });
 });

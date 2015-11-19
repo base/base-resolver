@@ -94,15 +94,15 @@ utils.createConfig = function(config) {
  */
 
 utils.resolve = function(patterns, options) {
+  var opts = utils.extend({cwd: '', realpath: true}, options);
   patterns = utils.arrayify(patterns);
 
-  var key = patterns.join('');
+  var key = patterns.join('') + opts.cwd;
   if (resolveCache.hasOwnProperty(key)) {
     return resolveCache[key];
   }
 
   try {
-    var opts = utils.extend({cwd: '', realpath: true}, options);
     opts.cwd = utils.resolveDir(opts.cwd);
     var files = [];
 
