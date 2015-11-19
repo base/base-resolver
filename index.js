@@ -1,5 +1,5 @@
 /*!
- * base-register <https://github.com/jonschlinkert/base-register>
+ * base-resolver <https://github.com/jonschlinkert/base-resolver>
  *
  * Copyright (c) 2015, Jon Schlinkert.
  * Licensed under the MIT License.
@@ -106,13 +106,12 @@ module.exports = function(App, config) {
         }
 
         this.emit('register', alias, inst);
-        this.leaf(alias, tasks);
         this[plural][alias] = inst;
         return inst;
       } catch (err) {
         err.method = 'register';
         err.args = [].slice.call(arguments);
-        app.emit('error', err.stack);
+        app.emit('error', err);
       }
     }
 
