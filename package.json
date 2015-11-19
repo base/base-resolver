@@ -33,7 +33,17 @@
   },
   "devDependencies": {
     "base-methods": "^0.5.0",
+    "base-tasks": "^0.1.1",
     "mocha": "*"
   },
-  "keywords": []
+  "verb": {
+    "related": {
+      "list": [
+        "base-methods",
+        "base-paths",
+        "base-plugins",
+        "base-cli"
+      ]
+    }
+  }
 }
