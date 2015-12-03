@@ -1,99 +1,61 @@
 'use strict';
 
 require('mocha');
-var path = require('path');
 var assert = require('assert');
-var register = require('./')
-var tasks = require('base-tasks');
 var Base = require('base-methods');
+var resolver = require('./');
 var base;
 
-describe('create', function() {
+describe('errors', function() {
   beforeEach(function() {
     base = new Base();
-  })
-
-  it('should add a register method to the instance', function() {
-    base.use(register());
-    assert.equal(typeof base.register, 'function');
   });
 
-  it('should add a resolve method to the instance', function() {
-    base.use(register());
-    assert.equal(typeof base.resolve, 'function');
-  });
-
-  it('should add custom method "method" to the instance', function() {
-    base.use(register({
-      method: 'foo'
-    }));
-    assert.equal(typeof base.foo, 'function');
-  });
-
-  it('should use Ctor name to create custom "get" method', function() {
-    function Assemble() {}
-    base.use(register(Assemble));
-    assert.equal(typeof base.getAssemble, 'function');
+  it('should throw an error when moduleName is not defined', function(cb) {
+    try {
+      base.use(resolver());
+      cb(new Error('exected an error'));
+    } catch (err) {
+      assert(err);
+      assert.equal(err.message, 'expected "moduleName" to be a string');
+      cb();
+    }
   });
 });
 
-describe('resolve', function() {
+describe('resolver', function() {
   beforeEach(function() {
     base = new Base();
-    base.on('error', function(err) {
-      console.log(err);
-    })
-
-    base.use(register(App, {
-      method: 'app',
-      plural: 'apps'
-    }));
-
-    function App(name, options, parent, fn) {
-      Base.call(this, options, parent, fn);
-      this.use(tasks('app'));
-      this.path = name;
-      this.cwd = path.dirname(name);
-      this.name = path.basename(this.cwd, path.extname(this.cwd));
-      this.alias = path.basename(this.cwd).split('-').pop();
-      try {
-        fn.call(this, this, parent);
-      } catch (err) {
-        console.log(err);
-      }
-    }
-
-    Base.extend(App);
+    base.use(resolver('base-methods'));
   });
 
-  describe('glob patterns', function() {
-    it('should register locally install modules', function() {
-      base.register('fixtures/apps/app-*/*.js');
-      assert(base.apps.hasOwnProperty('foo'));
-      assert(base.apps.hasOwnProperty('bar'));
-      assert(base.apps.hasOwnProperty('baz'));
+  it('should decorate `resolver` onto the instance', function() {
+    assert.equal(typeof base.resolver, 'object');
+  });
+
+  it('should expose a static `getConfig` method', function() {
+    assert.equal(typeof resolver.getConfig, 'function');
+  });
+
+  it('should decorate a `resolve` method onto the instance', function() {
+    assert.equal(typeof base.resolve, 'function');
+  });
+
+  it('should emit a config for files that match the given pattern', function(cb) {
+    base.once('config', function(config) {
+      assert(config);
+      assert(config.path);
+      cb();
     });
+    base.resolve('basefile.js', {cwd: 'fixtures'});
+  });
 
-    it('should register tasks from locally install modules', function() {
-      base.register('fixtures/apps/app-*/*.js');
-
-      assert(base.apps.foo.tasks.hasOwnProperty('default'));
-      assert(base.apps.foo.tasks.hasOwnProperty('a'));
-      assert(base.apps.foo.tasks.hasOwnProperty('b'));
-      assert(base.apps.foo.tasks.hasOwnProperty('c'));
-
-      assert(base.apps.bar.tasks.hasOwnProperty('default'));
-      assert(base.apps.bar.tasks.hasOwnProperty('a'));
-      assert(base.apps.bar.tasks.hasOwnProperty('b'));
-      assert(base.apps.bar.tasks.hasOwnProperty('c'));
+  it('should emit `module` as the second arg', function(cb) {
+    base.once('config', function(config, mod) {
+      assert(mod);
+      assert(mod.path);
+      cb();
     });
-
-    it('should fire a "resolve" event for each resolved path', function(cb) {
-      base.once('resolve', function (fp) {
-        assert(/appfile/.test(fp));
-        cb();
-      });
-      base.register('fixtures/apps/app-*/*.js');
-    });
+    base.resolve('basefile.js', {cwd: 'fixtures'});
   });
 });

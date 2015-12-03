@@ -1,0 +1,14 @@
+{
+  "name": "foo",
+  "description": "test fixture",
+  "version": "0.1.0",
+  "repository": "jonschlinkert/foo",
+  "license": "MIT",
+  "main": "index.js",
+  "engines": {
+    "node": ">=0.10.0"
+  },
+  "scripts": {
+    "test": "mocha"
+  }
+}
