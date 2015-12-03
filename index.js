@@ -7,128 +7,130 @@
 
 'use strict';
 
+var fs = require('fs');
+var path = require('path');
 var utils = require('./utils');
 
-module.exports = function(App, config) {
-  if (typeof App !== 'function') {
-    config = App;
-    App = null;
+module.exports = function(moduleName) {
+  if (typeof moduleName !== 'string') {
+    throw new TypeError('expected "moduleName" to be a string');
   }
 
-  config = utils.createConfig(config);
-
   return function(app) {
-    var opts = utils.extend({}, this.options, config);
-    var method = opts.method || 'app';
-    var plural = opts.plural || 'apps';
-    var appname = App ? App.name : 'App';
-    var get = 'get' + appname;
-
-    if (!this[plural]) {
-      this[plural] = {};
-    }
-
-    function error(msg, name) {
-      throw new Error(appname + ' ' + msg + ' ' + method + ': "' + name + '"');
-    }
+    var Resolver = utils.Resolver;
 
     /**
-     * Listen for `resolve` then register filepaths as they're emitted.
+     * Initialize resolver defaults
      */
 
-    this.on('resolve', function(fp, options) {
-      app.register(fp, options, utils.tryRequire(fp));
-    });
+    var opts = utils.extend({ module: moduleName }, this.options);
+    this.define('resolver', new Resolver(opts));
 
     /**
-     * Aliased-proxy to the `register` method for getting or setting
-     * an `app` on the instance (for example, generators and
-     * updaters are apps).
-     *
-     * @param {String} `name`
-     * @param {Object} `options`
-     * @param {Function} `fn`
-     * @return {Object} Returns an app.
+     * Forward `config` events from `resovler`
      */
 
-    app.define(method, function(name, options, fn) {
-      if (arguments.length === 1 && typeof name === 'string') {
-        return this[get].apply(this, arguments);
-      }
-      return this.register.apply(this, arguments);
-    });
-
-
-    app.define(get, function(name) {
-      if (name === 'base') return this;
-      name = name.split('.').join('.' + plural + '.');
-
-      var res = utils.get(this[plural], name);
-      if (typeof res === 'undefined') {
-        error('cannot resolve', name);
-      }
-      return res;
-    });
+    this.resolver.on('config', this.emit.bind(this, 'config'));
 
     /**
-     * Get or set an `app` (generator, updater, etc.) on the instance.
+     * Passes the given glob pattern(s) to [matched][] and emits a
+     * `config` object for each matching file.
      *
      * ```js
-     * generate.register('generate-foo', opts, function(app, base, env) {
-     *   // do stuff
+     * resolver.on('config', function(config) {
+     *   // do stuff with "config"
      * });
+     *
+     * resolver
+     *   .resolve('generator.js', {cwd: 'foo'})
+     *   .resolve('generator.js', {cwd: 'bar'})
+     *   .resolve('generator.js', {cwd: 'baz'})
      * ```
-     * @param {String} `name`
-     * @param {Object} `options`
-     * @param {Function} `fn`
-     * @return {Object} Returns an app.
+     * @param {String|Array} `patterns` Glob patterns to search
+     * @param {Object} `options` Options to pass to [matched][]
+     * @return {Object}
      * @api public
      */
 
-    app.define('register', register);
-
-    function register(path, options, fn) {
-      if (typeof options === 'function') {
-        return this.register(path, {}, options);
-      }
-
-      if (utils.hasGlob(path)) {
-        return this.resolve.apply(this, arguments);
-      }
-
-      try {
-        var inst = new App(path, options, this, fn);
-        var tasks = inst.tasks || [];
-        var alias = inst.alias;
-
-        if (this.run && typeof inst.use === 'function') {
-          this.run(inst);
-        }
-
-        this.emit('register', alias, inst);
-        this[plural][alias] = inst;
-        return inst;
-      } catch (err) {
-        err.method = 'register';
-        err.args = [].slice.call(arguments);
-        app.emit('error', err);
-      }
-    }
-
-    /**
-     * Resolve the paths to local and/or global npm modules that
-     * match the given glob patterns.
-     *
-     * @param {String} `name`
-     * @param {Object} `options`
-     * @param {Function} `fn`
-     * @return {Object} Returns an app.
-     */
-
-    app.define('resolve', function(patterns, options) {
-      utils.resolve(patterns, options).forEach(function(fp) {
-        app.emit('resolve', fp, options);
-      });
+    app.mixin('resolve', function(patterns, options) {
+      var opts = utils.extend({}, this.options, options);
+      this.resolver.resolve(patterns, opts);
+      return this;
     });
   };
+};
+
+/**
+ * If necessary, this static method will resolve the _first instance_
+ * to be used as the `base` instance for caching any additional resolved configs.
+ *
+ * ```js
+ * var Generate = require('generate');
+ * var resolver = require('base-resolver');
+ *
+ * var generate = resolver.first('generator.js', 'generate', {
+ *   Ctor: Generate,
+ *   isModule: function(app) {
+ *     return app.isGenerate;
+ *   }
+ * });
+ * ```
+ * @param {String} `configfile` The name of the config file, ex: `assemblefile.js`
+ * @param {String} `moduleName` The name of the module to lookup, ex: `assemble`
+ * @param {Object} `options`
+ *   @option {Function} `options.isModule` Optionally pass a function that will be used to verify that the correct instance was created.
+ * @return {Object}
+ * @api public
+ */
+
+module.exports.getConfig = function(configfile, moduleName, options) {
+  var opts = utils.extend({cwd: process.cwd()}, options);
+  var fp = path.resolve(opts.cwd, configfile);
+  var Resolver = utils.Resolver;
+  var Ctor = opts.Ctor;
+
+  if (typeof Ctor !== 'function') {
+    throw new TypeError('expected options.Ctor to be a function');
+  }
+
+  var validate = function() {
+    return false;
+  };
+
+  if (typeof opts.isModule === 'function') {
+    validate = opts.isModule;
+  }
+
+  // if a "configfile.js" is in the user's cwd, we'll try to
+  // require it in and use it to get (or create) the instance
+  if (fs.existsSync(fp)) {
+    var env = new Resolver.Config({path: fp});
+    var mod = new Resolver.Mod(moduleName, env);
+    env.module = mod;
+
+    Ctor = mod.fn;
+
+    // `fn` is whatever the "configfile" returns
+    var fn = env.fn;
+
+    // if the "configfile" returns a function, we need to
+    // call the function, and pass an instance of our
+    // application to it
+    if (typeof fn === 'function') {
+      var app = new Ctor();
+      app.fn = fn;
+      app.env = env;
+
+      fn.call(app, app, app.base, env);
+
+      // set the `app` function on the instance, so it
+      // can be used to utils.extend other generators if needed
+      return app;
+    } else if (validate(fn)) {
+      // if the "configfile" returns an instance of our application
+      // we'll use that as our `base`
+      return fn;
+    }
+  }
+  return new Ctor();
 };
