@@ -1,6 +1,6 @@
 # base-resolver [![NPM version](https://badge.fury.io/js/base-resolver.svg)](http://badge.fury.io/js/base-resolver)  [![Build Status](https://travis-ci.org/jonschlinkert/base-resolver.svg)](https://travis-ci.org/jonschlinkert/base-resolver)
 
-> base-methods plugin for resolving and registering 'base' applications.
+> 'base-methods' plugin for resolving and loading globally installed npm modules.
 
 ## Install
 
@@ -13,38 +13,112 @@ $ npm i base-resolver --save
 ## Usage
 
 ```js
-var Base = require('base-methods');
 var resolver = require('base-resolver');
+```
 
-var base = new Base();
-base.use(resolver({
-  appname: 'generate'
-}));
+### Example
+
+In two steps, the following example shows how we would use `base-resolver` with a custom `Generate` application that is built on top of [base-methods][].
+
+**Step 1: Setup**
+
+The following example shows how we might begin creating a basic project generator from [base-methods][]. More specifically, this shows how we might register and cache generators.
+
+```js
+var resolver = require('base-resolver');
+var Generate = require('base-methods');
+
+// register a "global" plugin, to initialize the `generators` 
+// object, and decorate a `register` method (as an alternative 
+// to inheriting base-methods or other more complicated approaches)
+Generate.use(function(app) {
+  app.generators = {};
+  app.define('register', function(key, config) {
+    this.generators[key] = config;
+    return this;
+  });
+});
+
+// register `resolver` as a global plugin
+Generate.use(resolver('generate'));
+```
+
+**Step 2**
+
+Intantiate the custom application we just created, and search for generators!
+
+```js
+var generate = new Generate();
+
+// setup a listener that will register generators (
+// `config`s) as they're emitted
+generate.on('config', function(config) {
+  console.log('registered:', config.alias);
+  generate.register(config.alias, config);
+});
+
+// find configs!
+generate
+  .resolve('generate-*/generator.js', {
+    cwd: require('global-modules')
+  });
+  .resolve('generate-*/generator.js', {
+    cwd: process.cwd()
+  });
 ```
 
 ## API
 
 **Params**
 
-* `name` **{String}**
-* `options` **{Object}**
-* `fn` **{Function}**
-* `returns` **{Object}**: Returns an app.
+* `patterns` **{String|Array}**: Glob patterns to search
+* `options` **{Object}**: Options to pass to [matched](https://github.com/jonschlinkert/matched)
+* `returns` **{Object}**
 
 **Example**
 
 ```js
-generate.register('generate-foo', opts, function(app, base, env) {
-  // do stuff
+resolver.on('config', function(config) {
+  // do stuff with "config"
+});
+
+resolver
+  .resolve('generator.js', {cwd: 'foo'})
+  .resolve('generator.js', {cwd: 'bar'})
+  .resolve('generator.js', {cwd: 'baz'})
+```
+
+### [.getConfig](index.js#L86)
+
+If necessary, this static method will resolve the _first instance_ to be used as the `base` instance for caching any additional resolved configs.
+
+**Params**
+
+* `configfile` **{String}**: The name of the config file, ex: `assemblefile.js`
+* `moduleName` **{String}**: The name of the module to lookup, ex: `assemble`
+* `options` **{Object}**
+* `returns` **{Object}**
+
+**Example**
+
+```js
+var Generate = require('generate');
+var resolver = require('base-resolver');
+
+var generate = resolver.first('generator.js', 'generate', {
+  Ctor: Generate,
+  isModule: function(app) {
+    return app.isGenerate;
+  }
 });
 ```
 
 ## Related projects
 
-* [base-cli](https://www.npmjs.com/package/base-cli): Plugin for base-methods that maps built-in methods to CLI args (also supports methods from a… [more](https://www.npmjs.com/package/base-cli) | [homepage](https://github.com/jonschlinkert/base-cli)
-* [base-methods](https://www.npmjs.com/package/base-methods): Starter for creating a node.js application with a handful of common methods, like `set`, `get`,… [more](https://www.npmjs.com/package/base-methods) | [homepage](https://github.com/jonschlinkert/base-methods)
-* [base-paths](https://www.npmjs.com/package/base-paths): base-methods plugin for settings and getting path information. | [homepage](https://github.com/jonschlinkert/base-paths)
-* [base-plugins](https://www.npmjs.com/package/base-plugins): Upgrade's plugin support in base-methods to allow plugins to be called any time after init. | [homepage](https://github.com/jonschlinkert/base-plugins)
+* [global-modules](https://www.npmjs.com/package/global-modules): The directory used by npm for globally installed npm modules. | [homepage](https://github.com/jonschlinkert/global-modules)
+* [matched](https://www.npmjs.com/package/matched): Adds array support to node-glob, sync and async. Also supports tilde expansion (user home) and… [more](https://www.npmjs.com/package/matched) | [homepage](https://github.com/jonschlinkert/matched)
+* [npm-paths](https://www.npmjs.com/package/npm-paths): Returns an array of unique "npm" directories based on the user's platform and environment. | [homepage](https://github.com/jonschlinkert/npm-paths)
+* [resolve-modules](https://www.npmjs.com/package/resolve-modules): Resolves local and global npm modules that match specified patterns, and returns a configuration object… [more](https://www.npmjs.com/package/resolve-modules) | [homepage](https://github.com/jonschlinkert/resolve-modules)
 
 ## Running tests
 
@@ -72,4 +146,4 @@ Released under the MIT license.
 
 ***
 
-_This file was generated by [verb-cli](https://github.com/assemble/verb-cli) on November 19, 2015._
+_This file was generated by [verb-cli](https://github.com/assemble/verb-cli) on December 03, 2015._
