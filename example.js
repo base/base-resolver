@@ -1,8 +1,8 @@
 'use strict';
 
 var resolver = require('./');
-var gm = require('global-modules');
 var Generate = require('base-methods');
+var gm = require('global-modules');
 
 Generate.use(function(app) {
   app.generators = {};
@@ -13,8 +13,9 @@ Generate.use(function(app) {
 });
 Generate.use(resolver('generate'));
 
-var generate = new Generate();
 
+
+var generate = new Generate();
 generate.on('config', function(config) {
   console.log('registered:', config.alias);
   generate.register(config.alias, config);

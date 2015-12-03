@@ -83,8 +83,8 @@ module.exports = function(moduleName) {
  * @api public
  */
 
-module.exports.getConfig = function(configfile, moduleName, options) {
-  var opts = utils.extend({cwd: process.cwd()}, options);
+function getConfig(configfile, moduleName, options) {
+  var opts = utils.extend({ cwd: process.cwd() }, options);
   var fp = path.resolve(opts.cwd, configfile);
   var Resolver = utils.Resolver;
   var Ctor = opts.Ctor;
@@ -106,8 +106,8 @@ module.exports.getConfig = function(configfile, moduleName, options) {
   if (fs.existsSync(fp)) {
     var env = new Resolver.Config({path: fp});
     var mod = new Resolver.Mod(moduleName, env);
-    env.module = mod;
 
+    env.module = mod;
     Ctor = mod.fn;
 
     // `fn` is whatever the "configfile" returns
@@ -132,5 +132,19 @@ module.exports.getConfig = function(configfile, moduleName, options) {
       return fn;
     }
   }
+
+  // if we haven't resolved a user-specified config file by now,
+  // try the fallback dir, if passed on the options
+  if (opts.fallback) {
+    opts.cwd = opts.fallback;
+    return getConfig(configfile, moduleName, opts);
+  }
+
   return new Ctor();
 };
+
+/**
+ * Expose `getConfig`
+ */
+
+module.exports.getConfig = getConfig;
