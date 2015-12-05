@@ -33,29 +33,27 @@ describe('resolver', function() {
     assert.equal(typeof base.resolver, 'object');
   });
 
-  it('should expose a static `getConfig` method', function() {
-    assert.equal(typeof resolver.getConfig, 'function');
-  });
-
   it('should decorate a `resolve` method onto the instance', function() {
     assert.equal(typeof base.resolve, 'function');
   });
 
-  it('should emit a config for files that match the given pattern', function(cb) {
-    base.once('config', function(config) {
-      assert(config);
-      assert(config.path);
+  it('should emit an `env` object for files that match the given pattern', function(cb) {
+    base.once('config', function(key, env) {
+      assert(env);
+      assert(env.config);
+      assert(env.config.path);
       cb();
     });
-    base.resolve('basefile.js', {cwd: 'fixtures'});
+    base.resolve({pattern: 'basefile.js', cwd: 'fixtures'});
   });
 
-  it('should emit `module` as the second arg', function(cb) {
-    base.once('config', function(config, mod) {
-      assert(mod);
-      assert(mod.path);
+  it('should emit an `env.module` object', function(cb) {
+    base.once('config', function(key, env) {
+      assert(env);
+      assert(env.module);
+      assert(env.module.path);
       cb();
     });
-    base.resolve('basefile.js', {cwd: 'fixtures'});
+    base.resolve({pattern: 'basefile.js', cwd: 'fixtures'});
   });
 });
