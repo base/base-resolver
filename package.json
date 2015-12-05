@@ -1,7 +1,7 @@
 {
   "name": "base-resolver",
   "description": "'base-methods' plugin for resolving and loading globally installed npm modules.",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "homepage": "https://github.com/jonschlinkert/base-resolver",
   "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
   "repository": "jonschlinkert/base-resolver",
@@ -23,7 +23,7 @@
   "dependencies": {
     "extend-shallow": "^2.0.1",
     "lazy-cache": "^0.2.4",
-    "resolve-modules": "^0.3.0"
+    "resolve-modules": "^0.3.1"
   },
   "devDependencies": {
     "base-methods": "^0.6.1",
