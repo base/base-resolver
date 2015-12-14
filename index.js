@@ -54,14 +54,13 @@ module.exports = function(moduleName) {
      * @api public
      */
 
-    app.mixin('resolve', function(name, options) {
-      if (typeof name !== 'string') {
-        return this.resolve('default', name);
-      }
-      var opts = utils.extend({}, this.options, options);
-      this.resolver.resolve(name, opts);
-      return this;
-    });
+    app.define('resolve', this.resolver.resolve.bind(this.resolver));
+
+    /**
+     * Add the `Resolver` ctor to the instance
+     */
+
+    app.define('Resolver', Resolver);
   };
 };
 
