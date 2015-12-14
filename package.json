@@ -37,11 +37,18 @@
   "verb": {
     "related": {
       "list": [
-        "matched",
-        "resolve-modules",
         "global-modules",
-        "npm-paths"
+        "matched",
+        "npm-paths",
+        "resolve-modules"
       ]
-    }
+    },
+    "reflinks": [
+      "generate",
+      "matched"
+    ],
+    "plugins": [
+      "gulp-format-md"
+    ]
   }
 }
