@@ -24,7 +24,7 @@
     "arr-union": "^3.0.0",
     "extend-shallow": "^2.0.1",
     "lazy-cache": "^1.0.3",
-    "resolve-modules": "^0.3.5"
+    "resolve-modules": "github:jonschlinkert/resolve-modules#refactor"
   },
   "devDependencies": {
     "base": "^0.7.3",
