@@ -1,25 +1,13 @@
 'use strict';
 
 var resolver = require('./');
-var Generate = require('base-methods');
-var gm = require('global-modules');
+var Base = require('base');
+var base = new Base();
+base.use(resolver());
 
-Generate.use(function(app) {
-  app.generators = {};
-  app.define('register', function(key, config) {
-    this.generators[key] = config;
-    return this;
-  });
-});
-Generate.use(resolver('generate'));
+base.generators.resolve('generate-*/{generator,index}.js');
+base.generators.resolve('verb-*/{verbfile,index}.js');
 
-
-
-var generate = new Generate();
-generate.on('config', function(config) {
-  console.log('registered:', config.alias);
-  generate.register(config.alias, config);
-});
-
-generate.resolve('generate-*/generator.js', {cwd: gm});
-console.log(generate);
+console.log(base.generators.name('generate-node'));
+console.log(base.generators.alias('mocha'));
+console.log(base.generators);

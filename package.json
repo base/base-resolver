@@ -21,13 +21,14 @@
     "test": "mocha"
   },
   "dependencies": {
+    "arr-union": "^3.0.0",
     "extend-shallow": "^2.0.1",
-    "lazy-cache": "^1.0.2",
-    "resolve-modules": "^0.3.3"
+    "lazy-cache": "^1.0.3",
+    "resolve-modules": "^0.3.5"
   },
   "devDependencies": {
-    "base-methods": "^0.6.1",
-    "global-modules": "^0.2.0",
+    "base": "^0.7.3",
+    "gulp-format-md": "^0.1.7",
     "mocha": "*"
   },
   "keywords": [
@@ -35,6 +36,15 @@
     "resolver"
   ],
   "verb": {
+    "run": true,
+    "toc": false,
+    "layout": "default",
+    "tasks": [
+      "readme"
+    ],
+    "plugins": [
+      "gulp-format-md"
+    ],
     "related": {
       "list": [
         "global-modules",
@@ -45,10 +55,11 @@
     },
     "reflinks": [
       "generate",
-      "matched"
+      "matched",
+      "verb"
     ],
-    "plugins": [
-      "gulp-format-md"
-    ]
+    "lint": {
+      "reflinks": true
+    }
   }
 }
